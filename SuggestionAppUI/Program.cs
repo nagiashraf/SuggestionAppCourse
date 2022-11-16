@@ -1,9 +1,27 @@
+using SuggestionAppLibrary;
+using SuggestionAppUI;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.ConfigureServices();
 
 var app = builder.Build();
+
+using var serviceScope = app.Services.CreateScope();
+var services = serviceScope.ServiceProvider;
+var logger = services.GetRequiredService<ILogger<Program>>();
+try
+{
+    var db = services.GetRequiredService<IDbConnection>();
+    await DataSeed.SeedAsync(db);
+}
+catch (Exception ex)
+{
+    if (app.Environment.IsDevelopment())
+    {
+        logger.LogError("Error seeding data", ex);
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -24,4 +42,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.Run();
+await app.RunAsync();
